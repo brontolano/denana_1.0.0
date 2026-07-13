@@ -114,6 +114,23 @@ denana_1.0.0/
 
 ---
 
+## ☁️ Deploy dengan Supabase + Vercel
+
+Integrasi siap pakai dengan **Supabase** (database PostgreSQL + storage) + **Vercel** (frontend).
+
+```bash
+# Frontend — deploy ke Vercel
+cd frontend
+npm install
+vercel --prod
+
+# Backend — deploy ke Railway/Render
+cd backend
+railway up
+```
+
+Lihat panduan lengkap di [SUPABASE_VERCEL.md](SUPABASE_VERCEL.md).
+
 ## 🐳 Deploy dengan Docker
 
 Lihat file [DEPLOY.md](DEPLOY.md) untuk panduan lengkap deployment menggunakan Docker + Nginx.
