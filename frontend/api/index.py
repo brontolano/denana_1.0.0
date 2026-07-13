@@ -1,7 +1,8 @@
-import sys, os
+import sys, os, json, traceback
 
-backend_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'backend')
-sys.path.insert(0, backend_dir)
+_current = os.path.abspath(os.path.dirname(__file__))
+_backend = os.path.join(_current, '..', '..', 'backend')
+sys.path.insert(0, os.path.abspath(_backend))
 
 if not os.environ.get('DATABASE_URL'):
     os.environ.setdefault(
@@ -9,4 +10,27 @@ if not os.environ.get('DATABASE_URL'):
         'postgresql+pg8000://postgres.opcwwyvfrzcwypzvhnqu:B!smillahberkah@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres'
     )
 
-from app.main import app
+try:
+    from app.main import app
+except Exception as e:
+    error_detail = {
+        'error': str(e),
+        'traceback': traceback.format_exc(),
+        'python_path': sys.path,
+        'cwd': os.getcwd(),
+        'files_root': os.listdir('.') if os.path.exists('.') else [],
+    }
+    print(f'STARTUP ERROR: {json.dumps(error_detail, indent=2)}')
+
+    async def app(scope, receive, send):
+        if scope['type'] == 'http':
+            body = json.dumps(error_detail, indent=2).encode()
+            await send({
+                'type': 'http.response.start',
+                'status': 500,
+                'headers': [
+                    [b'content-type', b'application/json'],
+                    [b'access-control-allow-origin', b'*'],
+                ],
+            })
+            await send({'type': 'http.response.body', 'body': body})
