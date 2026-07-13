@@ -11,7 +11,9 @@ if not os.environ.get('DATABASE_URL'):
     )
 
 try:
-    from app.main import app
+    from app.main import app as fastapi_app
+    from mangum import Mangum
+    app = Mangum(fastapi_app)
 except Exception as e:
     error_detail = {
         'error': str(e),
