@@ -1,0 +1,72 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  frontend:
+    name: Frontend -> Vercel
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: frontend
+
+  database:
+    name: Database -> Supabase
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - run: pip install -r requirements.txt pg8000
+
+      - name: Run migrations
+        run: python -c "
+from app.db import create_db, SessionLocal
+from app.models import *
+from sqlalchemy import inspect
+from app.db import engine
+create_db()
+inspector = inspect(engine)
+print(f'Tables: {inspector.get_table_names()}')
+"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Seed data
+        run: python seed.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
