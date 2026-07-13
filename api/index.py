@@ -1,7 +1,7 @@
 import sys, os, json, traceback
 
 _current = os.path.abspath(os.path.dirname(__file__))
-_backend = os.path.join(_current, 'backend')
+_backend = os.path.join(_current, '..', 'backend')
 sys.path.insert(0, os.path.abspath(_backend))
 
 if not os.environ.get('DATABASE_URL'):
